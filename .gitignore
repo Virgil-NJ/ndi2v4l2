@@ -39,7 +39,7 @@
 *.out
 *.app
 
-# Build directories
+# Out-of-source build directories (including the Milestone 0 build/)
 build/
 Build/
 build-*/
