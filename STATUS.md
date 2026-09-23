@@ -5,62 +5,73 @@ Repository: `/home/loudmonkey/_git/ndi2v4l2`
 
 ## Current milestone
 
-Milestone 0 - C++ Project Scaffold complete.
-Milestone 1 - NDI Source Discovery blocked during prerequisite inspection; implementation has not started.
-Milestone 2 has NOT started.
+Milestone 1 - NDI Source Discovery complete
+Milestone 0 remains complete. Milestone 2 has NOT started.
 
-## Previous prerequisite inspection
+## Work completed
 
-* Read AGENTS.md, PLAN.md, STATUS.md and inspected the Milestone 0 scaffold.
-* Confirmed repository identity, branch `main`, and initially clean working tree.
-* HEAD and cached origin/main both identify `466c2d0f9c1958149ccd2bbdc31bafdb4bcae0f3` (zero divergence).
-* Inspected standard include/library locations, /opt, the user's home directory, linker cache, and installed-package metadata for NDI development components.
-* No Processing.NDI headers or libndi libraries were found in the inspected locations. No matching installed-package metadata was found.
-* Dynamic loader could not resolve libndi.so, libndi.so.6, or libndi.so.5. NDI runtime directory variables and LD_LIBRARY_PATH are unset.
-* Installed NDI SDK/runtime version and usable library path could not be determined because the components were not found.
-* Stopped before implementation, installation, or system configuration changes.
+* Re-read AGENTS.md, PLAN.md, STATUS.md. Initial branch main tracked origin/main; only STATUS.md had the prior blocker notes modified.
+* User explicitly reviewed and accepted the SDK license and authorized answering y.
+* Ran the inspected official installer in `/home/loudmonkey/SDKs`; no system installation.
+* SDK layout includes include, lib, bin, documentation, examples, and licenses, all outside the repository.
+* Verified runtime version through NDIlib_version: `NDI SDK LINUX 12:51:52 Apr 13 2026 6.3.2.0`.
+* Added CMake NDI_SDK_ROOT setting (also initialized from the environment), header/library lookup, and direct shared-library linking. No runtime dynamic-loading architecture was added.
+* Preserved C++17, project version 0.1.0, compilation database export, and out-of-source build.
+* Implemented --list: runtime initialization, finder creation, approximately three seconds of discovery, source-name enumeration, finder destruction, runtime shutdown. No sources is a successful result.
+* Normal invocation continues to print `ndi2v4l2 0.1.0`.
+* No video reception, decoding, audio, V4L2, or Milestone 2 work.
+
+## External SDK
+
+* Root: `/home/loudmonkey/SDKs/NDI SDK for Linux`
+* Headers: `include/Processing.NDI.Lib.h` and its included headers, including `Processing.NDI.Find.h`.
+* Runtime: `lib/x86_64-linux-gnu/libndi.so.6.3.2`.
+* Both `libndi.so` and `libndi.so.6` symlink to `libndi.so.6.3.2` in that directory.
+* SDK/runtime remain separately licensed external dependencies. No SDK materials were copied into the repository.
 
 ## Files changed
 
-* AGENTS.md: clarified autonomous actions, explicit approvals, dependencies, and automatic Git checkpoints.
-* STATUS.md: preserved the dependency blocker and recorded this workflow-only update.
+* CMakeLists.txt
+* src/main.cpp
+* STATUS.md
 
 ## Tests performed
 
+* `cmake -S . -B build -DNDI_SDK_ROOT='/home/loudmonkey/SDKs/NDI SDK for Linux'`
+* `cmake --build build`
+* `./build/ndi2v4l2`
+* `./build/ndi2v4l2 --list` (outside the network sandbox)
+* Runtime version queried with Python ctypes and NDIlib_version.
+* `git diff --check`
 * `git status --short --branch`
-* `git remote -v`
-* `git rev-list --left-right --count HEAD...origin/main`
-* `git rev-parse HEAD origin/main`
-* `git ls-remote origin refs/heads/main`
-* `ldconfig -p | rg -i 'libndi'`
-* `find /usr/include /usr/lib /usr/local /opt /home/loudmonkey -name 'Processing.NDI*' -o -name 'libndi*' -o -iname '*ndi*sdk*' 2>/dev/null`
-* `rg -i '^ndi|libndi|ndi-sdk' /var/lib/pacman/local/*/desc`
-* Python ctypes.CDLL resolution checks for libndi.so, libndi.so.6, and libndi.so.5, plus runtime environment variable inspection.
-* Final checks: `git diff --check`; `git status --short --branch`.
+* Python subprocess byte-for-byte version-output assertion and JSON compilation database C++17 check.
+* `git ls-files`; `git ls-files --others --exclude-standard`
+* `git check-ignore build/ndi2v4l2 build/compile_commands.json`
+* `ldd build/ndi2v4l2`
 
 ## Tests passed
 
-* Initial working tree clean; branch main; cached origin/main matches HEAD.
-* Milestone 0 scaffold remains unchanged: C++17, version 0.1.0, compilation database export, out-of-source build workflow.
+* CMake configuration and final build succeeded.
+* Normal invocation printed `ndi2v4l2 0.1.0` and exited 0.
+* --list initialized NDI, created the finder, completed discovery and cleanup, printed `No NDI sources found.`, and exited 0.
 
-## Tests failed / not run
+* After the user confirmed broadcasting, --list printed `Available NDI sources:` and `IPHONE 4D38 (HX Camera)` and exited 0.
+* Exact normal output and C++17 compilation database checks passed.
+* Runtime resolves from the external SDK directory; tracked/untracked file inventory contains no SDK materials. Build artifacts are ignored.
+* Milestone 1 acceptance criteria passed; discovery command validated.
 
-* Runtime resolution checks failed: libraries not found.
-* Live remote verification failed: SSH reported bad owner or permissions on `/etc/ssh/ssh_config.d/20-omarchy-keepalive.conf`. No SSH settings were changed.
-* Configure/build and discovery tests not run because required NDI development components are missing.
-* Milestone 1 acceptance criteria have NOT passed.
+## Tests failed
+
+* Initial build failed because SDK headers require NULL to be defined before inclusion. Fixed by including standard `<cstddef>` first; rebuild passed without changing SDK files.
+* No outstanding test failures.
 
 ## Known blockers
 
-* Official NDI SDK for Linux is needed: C/C++ API headers for compilation and the prebuilt shared runtime for initialization and discovery.
-* Obtain the Linux SDK from https://ndi.video/for-developers/ndi-sdk/download/ when Milestone 1 is assigned again, following the home-directory dependency policy in AGENTS.md. Proposed installer invocation, after obtaining/extracting the official v6 installer in a user-owned directory: `bash ./Install_NDI_SDK_v6_Linux.sh`. Verify the supplied installer filename and review its license before execution; do not auto-accept the license.
-* Source: official NDI SDK, not an Arch repository or AUR package. No third-party source compilation is proposed.
-* SDK/runtime remain subject to NDI's own license, not this project's MIT license. Review the supplied agreement and redistribution/attribution requirements before distribution; do not commit proprietary SDK/runtime files.
-* Live origin/main synchronization remains unverified because of the SSH configuration error above.
+None. The live iPhone source was discovered after the user started broadcasting. No network troubleshooting was needed.
 
 ## System changes
 
-None.
+None. Official SDK extracted only under `/home/loudmonkey/SDKs`.
 
 ## Packages installed
 
@@ -68,11 +79,6 @@ None.
 
 ## Next recommended task
 
-Run `/status`, then await a separate assignment to resume Milestone 1. Under the updated policy, required SDK downloads and preparation entirely within the home directory may proceed autonomously during that approved milestone; system changes still require approval. Do not begin Milestone 2.
+Milestone 2 - NDI Video Reception, only after a separate user assignment. Milestone 2 has NOT started.
 
-## Current workflow task
-
-* Updated execution policy only; no Milestone 1 implementation, SDK preparation, or system changes performed.
-* Preserved the prior incomplete Milestone 1 inspection as an explicit blocker checkpoint in this policy commit.
-* Validation: documentation diff review and `git diff --check`; no application tests needed for this documentation-only change.
-* Delivery: commit and push this policy update to origin/main, then verify a clean, synchronized working tree. Final delivery results are reported in the task response.
+Completed Milestone 1 is ready for its authorized commit and push. The final task response records the commit hash, push result, and clean/synchronized repository verification.
